@@ -1,10 +1,5 @@
 #!/bin/bash
 
-#need root
-
-set -e
-#set -o pipefail
-
 WORK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
 readonly INSTALL_DIR="/usr/local"
@@ -25,7 +20,7 @@ echo "======================================================================="
 
 build(){
 
-  local build_dir=${WORK_DIR}/opencv-4.5.5/build/
+  local build_dir=${WORK_DIR}/opencv-${OPENCV_VERSION}/build/
   if [[ -d ${build_dir} ]];then
 	cd ${build_dir}
   else
@@ -105,6 +100,7 @@ main(){
   fi
   clean
   test_python_opencv
+  echo "======================================================================="
  }
 
 
