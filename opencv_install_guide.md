@@ -303,9 +303,9 @@ python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
 
 ### bash脚本
 
-本仓库提供了`install_opencv.sh`用于源代码构建安装opencv，但是脚本不提供依赖包安装项，需要自己手动下载并安装好依赖包如：python、cmake、make等。
+本仓库提供了`install_opencv.sh`用于源代码构建安装opencv，但是脚本不提供安装依赖包及一些工具包，需要自己手动下载并安装好依赖包如：python、cmake、make等。
 
-```bash
+```sh
 #使用脚本下载源码并构建opencv，普通用户需要root权限,或者直接用root用户
 sudo bash install_opencv.sh install 
 
