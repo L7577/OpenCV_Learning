@@ -45,7 +45,7 @@ python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
 
 ## 源代码构建
 
-安装依赖库
+### 安装依赖库
 
 ```sh
 sudo apt-get install cmake
@@ -75,7 +75,7 @@ sudo apt install libeigen3-dev
 
 
 
-下载源码
+### 下载源码
 
 ```sh
 OPENCV_VERSION=4.5.5
@@ -91,7 +91,9 @@ cd opencv/build
 
 配置项需要参考：[**OpenCV configuration options reference**](https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html)
 
-cmake配置，三种方式
+### cmake配置
+
+有两种方式可选，命令行、cmake-gui
 
 ```sh
 #初始化配置
@@ -122,7 +124,7 @@ cmake -L
 
 
 
-1.命令行
+#### 1.命令行
 
 ```sh
 cmake \
@@ -269,7 +271,7 @@ cmake \
 
 
 
-2.图形化界面
+#### 2.图形化界面
 
 使用cmake 打开`CMakeCache.txt`
 
@@ -291,10 +293,25 @@ make install
 
 
 
-测试
+### 测试
 
 ```sh
 python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
+```
+
+
+
+### bash脚本
+
+本仓库提供了`install_opencv.sh`用于源代码构建安装opencv，但是脚本不提供依赖包安装项，需要自己手动下载并安装好依赖包如：python、cmake、make等。
+
+```bash
+#使用脚本下载源码并构建opencv，普通用户需要root权限,或者直接用root用户
+sudo bash install_opencv.sh install 
+
+#注意install_opencv.sh中，有配置项需要手动修改
+#使用/bin/sh  时或在需要Dockerfile中运行，请注释 set -o pipefail 
+
 ```
 
 
@@ -305,15 +322,41 @@ python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
 
 选择所需的版本，可选支持CUDA或者不支持CUDA
 
-*注意：两个版本镜像大小差距很大，支持CUDA版，至少5G左右*
+*注意：两个版本镜像大小差距很大*
 
 
 
-可使用make工具以及shell脚本创建所需镜像！
+可使用make工具以及shell脚本创建所需镜像！本仓库已提供了可自动构建镜像所使用的Makefile、Dockerfile、以及源码安装的bash脚本（仅在ubuntu18.04测试）。
 
+```sh
+#下载仓库代码
+https://github.com/L7577/OpenCV_learning.git
+cd OpenCV_learning
+#修改Makefile  
+vim Makefile
 
+#构建的镜像名称或者仓库名称
+DOCKER_IMAGE	=opencv_test
+#选择基础镜像包
+BASE_IMAGE	=ubuntu:18.04
+#修改镜像包标签版本
+TAG_VERSION 	=$(BUILD_IMAGE_TYPE)-1.0.5
+#选择是否开启CUDA ，需要提前安装好nvidia-driver 和 NVIDIA Container Toolkit，并且设置好 runtime为 nvidia
+build:NVIDIA:=nvidia  #开启，默认关闭
+#修改运行镜像时所需的参数
+RUN_ARGS	=-it \
+		 -v /home/l/test:/test
+#运行时容器名称
+CONTAINER_NAME	=test_1
+#修改完Makefile，保存推出
 
-修改Makefile 、Dockerfile
+#检查install_opencv.sh,确保可以使用/bin/sh 命令运行该脚本
 
-构建镜像：make build
+#开始构建镜像
+make  build
+#上传镜像到仓库
+make push
+#运行容器
+make run 
+```
 
