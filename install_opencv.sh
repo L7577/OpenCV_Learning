@@ -13,6 +13,8 @@ readonly ROOT=ON
 # if don't need root,change it to OFF
 
 #-------------------------------
+# opencv with cuda
+CUDA_SUPPORT=OFF
 
 WORK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
@@ -25,9 +27,11 @@ url_opencv_contrib="https://github.com/opencv/opencv_contrib/archive/${OPENCV_VE
 zip_opencv=opencv.zip
 zip_opencv_contrib=opencv_contrib.zip
 
+
+
 #-------------------------------
 
- command_exists() {
+ command_exists(){
     command -v "$@" > /dev/null 2>&1
 }
 
@@ -84,7 +88,7 @@ readonly cmake_options=$(cat << EOF
 -D OPENCV_EXTRA_MODULES_PATH=${WORK_DIR}/opencv_contrib-${OPENCV_VERSION}/modules \
 -D OPENCV_GENERATE_PKGCONFIG=ON \
 -D BUILD_OPENCV_PYTHON2=OFF \
--D WITH_CUDA=OFF \
+-D WITH_CUDA=${CUDA_SUPPORT} \
 -D EIGEN_INCLUDE_PATH=/usr/include/eigen3 \
 -D BUILD_TESTS=OFF \
 -D INSTALL_TESTS=OFF \
@@ -110,7 +114,7 @@ install_opencv(){
      make -j$(nproc) && make install
      #cp -f ${BUILD_DIR}/unix-install/opencv4.pc /usr/lib/pkgconfig/opencv.pc
      local opencv_lib_path="${INSTALL_DIR}/lib/pkgconfig"
-     echo "export  PKG_CONFIG_PATH=\$PKG_CONFIG_PATH:${lib_path}" >> ~/.bashrc
+     echo "export  PKG_CONFIG_PATH=\$PKG_CONFIG_PATH:${opencv_lib_path}" >> ~/.bashrc
      source ~/.bashrc
      ldconfig
   else 

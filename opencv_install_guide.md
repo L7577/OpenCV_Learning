@@ -341,7 +341,7 @@ DOCKER_IMAGE	=opencv_test
 BASE_IMAGE	=ubuntu:18.04
 #修改镜像包标签版本
 TAG_VERSION 	=$(BUILD_IMAGE_TYPE)-1.0.5
-#选择是否开启CUDA ，需要提前安装好nvidia-driver 和 NVIDIA Container Toolkit，并且设置好 runtime为 nvidia
+#选择是否开启CUDA ，需要提前安装好nvidia-driver 和 NVIDIA Container Toolkit，并且设置好 默认runtime为 nvidia
 build:NVIDIA:=nvidia  #开启，默认关闭
 #修改运行镜像时所需的参数
 RUN_ARGS	=-it \

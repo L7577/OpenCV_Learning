@@ -12,10 +12,10 @@ endif
 DOCKER_RUNTIME =$(shell docker info 2>/dev/null | sed '/Runtime:/!d;s/.* //')
 #runtimes?=nvidia
 ifeq ("$(DOCKER_RUNTIME)","nvidia")
-CUDA_VERSION    =cuda-10.0
-CUDNN_VERSION   =cudnn-7
+CUDA_VERSION    =cuda:10.0
+CUDNN_VERSION   =cudnn7
 NVIDIA_IMAGE_TYPE=devel
-SYSTEM_NAME     =ubuntu:18.04
+SYSTEM_NAME     =ubuntu18.04
 NVIDIA		=nvidia
 else
 NVIDIA		=$(empty)
@@ -64,7 +64,7 @@ DOCKER_RMI	=$(RMI) $(RM_IMAGE)
 #TAG_CMD
 TAG		:=docker tag
 #1.0.0 +
-TAG_VERSION 	=$(BUILD_IMAGE_TYPE)-1.0.5
+TAG_VERSION 	=$(BUILD_IMAGE_TYPE)-1.0.6
 TAGS		=$(TAG) $(DOCKER_FULL_NAME):$(TAG_VERSION) $(DOCKER_FULL_NAME):$(DOCKER_TAG)
 
 
@@ -96,7 +96,7 @@ all: build push
 
 
 .PHONY:build
-build:NVIDIA:=
+build:NVIDIA=nvidia
 build:BASE_IMAGE:=$(IMAGE_NAME)
 build:
 	@echo "-----------------strart build image -------------"
