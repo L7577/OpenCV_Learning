@@ -12,5 +12,5 @@ RUN apt-get -qq update --fix-missing && apt-get -qq install -y \
 
 FROM base as dev
 COPY install_opencv.sh /install/install_opencv.sh
-RUN bash /install/install_opencv.sh
+RUN bash /install/install_opencv.sh install
 
