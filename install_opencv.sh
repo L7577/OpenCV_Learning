@@ -2,19 +2,16 @@
 #
 # This bash script install opencv in ubuntu
 #  
-set -e
-set -u
-# if need debug this script , use set -x
-#set -x
-#set -o pipefail
-# if use set -o pipefail , can't run with sh command and in Dockerfile RUN Command
 #------------------------------
-readonly ROOT=ON
-# if don't need root,change it to OFF
+# load bash library
+. libtools.sh
 
 #-------------------------------
 # opencv with cuda
 CUDA_SUPPORT=OFF
+
+NEEDED_TOOLS=(wget unzip cmake make)
+MISSING_TOOLS=()
 
 WORK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
@@ -27,15 +24,8 @@ url_opencv_contrib="https://github.com/opencv/opencv_contrib/archive/${OPENCV_VE
 zip_opencv=opencv.zip
 zip_opencv_contrib=opencv_contrib.zip
 
-
-
 #-------------------------------
-
- command_exists(){
-    command -v "$@" > /dev/null 2>&1
-}
-
- need_help(){
+usage(){
  cat << EOF
 Usage: bash $0 [install] [test] [help] ...
 
@@ -48,36 +38,14 @@ Examples:
   sudo bash install_opencv.sh install  will be start install opencv
 EOF
 }
-
- need_root(){
-  if [[ "$1" == "ON" ]];then
-      if [[ "$(id -un 2>/dev/null)" == "root" ]];then
-           true
-      else
-           false
-      fi
-  elif [[ "$1" == "OFF" ]];then
-      true 
-  else 
-      printf "The variable: ROOT in the script is set incorrectly, please check it\n" 
-      exit 1 
-  fi
-}
-
 #--------------------------------
 
 download_files(){
-  if command_exists wget ;then
-     wget -qq $1 -O $2
-     if command_exists unzip ;then
-       unzip -qq $2 -d $3
-     else
-       printf "unzip not found,please check it \n"
+     if ! check_file ${2}; then 
+        printf "wget start \n"
+        wget -qq $1 -O $2 
      fi
-  else
-     printf "wget not found ,please check it \n"
-     exit 1
-  fi
+     unzip -qq $2 -d $3
 }
 
 
@@ -104,78 +72,41 @@ EOF
 )
 
 install_opencv(){
-  if command_exists cmake;then
-     cmake ${cmake_options}
-     printf "cmake ${cmake_options}\n"
-  else
-     printf "cmake not found,please check it \n"
-     exit 1
-  fi
-
-  if command_exists make;then
-     make -j$(nproc) && make install
+     cmake ${cmake_options} \
+     && printf "cmake ${cmake_options}\n" \
+     && make -j$(nproc) && make install 
      #cp -f ${BUILD_DIR}/unix-install/opencv4.pc /usr/lib/pkgconfig/opencv.pc
-     local opencv_lib_path="${INSTALL_DIR}/lib/pkgconfig"
-     echo "export  PKG_CONFIG_PATH=\$PKG_CONFIG_PATH:${opencv_lib_path}" >> ~/.bashrc
-     source ~/.bashrc
-     ldconfig
-  else 
-     printf "make not found ,please check it \n"
-     exit 1
-  fi
-
+#     local opencv_lib_path="${INSTALL_DIR}/lib/pkgconfig"
+#     echo "export PKG_CONFIG_PATH=${opencv_lib_path}:\${PKG_CONFIG_PATH}" >> ~/.bashrc
+#     source ~/.bashrc
+#     ldconfig
 }
- 
  
 test_python_opencv(){
- 
-   if command_exists python3 ; then
-       python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
-   else
-       printf "python not found,please check it\n"
-       exit 1
-   fi    
+    remove_files opencv-4.5.5 opencv_contrib-4.5.5
+    python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
 }	
 
-check_files(){
-while [[ "$#" > "0" ]] && [[ -n "$@" ]];
-do
-   if [[ -e $1 ]];then
-      printf "remove $1\n"
-      rm -rf $1
-   else
-      printf "$1 is not a directory or file ,please check it \n"
-   fi
-shift
-done
-}
 
 install_test(){
+
 local BUILD_DIR=${WORK_DIR}/opencv-${OPENCV_VERSION}/build
+    download_files ${url_opencv} ${zip_opencv} ${WORK_DIR} 
+    mkdir -p ${BUILD_DIR} 
+    download_files ${url_opencv_contrib} ${zip_opencv_contrib} ${WORK_DIR} 
+    cd ${BUILD_DIR}
+    
+    install_opencv
 
-  if check_files $(ls -a| grep '^opencv*' 2>/dev/null) ;then
-     
-    download_files ${url_opencv} ${zip_opencv} ${WORK_DIR} && mkdir -p ${BUILD_DIR} && download_files ${url_opencv_contrib} ${zip_opencv_contrib} ${WORK_DIR}
-    printf "download files is over! \n"
-    if [[ "$?" == "0" ]] && [[ -d "${BUILD_DIR}" ]] ;then
-      cd ${BUILD_DIR}
-      printf "cmake options: ${cmake_options}\n"
-      install_opencv 
-    else
-      printf "build directory not found ,please check it\n"
-    fi
-  else
-    printf "Can't download files,please check!\n"
-  fi
-
+    cd ${WORK_DIR}
+    remove_files opencv-4.5.5 opencv_contrib-4.5.5
 }
 
-
- main(){
+main(){
   case "$1" in
 	install) install_test ;;
-	test) test_python_opencv;;
-	help) need_help ; exit 1;;
+	test) check_tool; test_python_opencv;;
+	help) usage ; exit 1;;
 	*)
 	  printf "Usage: bash $0 [install] [test] [help] ... \n"	
           ;;
@@ -183,16 +114,7 @@ local BUILD_DIR=${WORK_DIR}/opencv-${OPENCV_VERSION}/build
 }
 
 #-------------------------------------------------
-
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]];then
-   if need_root $ROOT ;then
-      if [[ "$#" != "0" ]];then
-        main $@
-      else
-        printf " No input! \n Usage: bash $0 [install] [test] [help] ... \n"
-      fi
-   else
-       printf " This bash script need root privileges. \n Please use root user or sudo command ! \n"
-   fi
-fi
-
+use_debug
+use_pipefail
+need_root
+checking $@ 

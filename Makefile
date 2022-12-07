@@ -1,127 +1,163 @@
+#
+#
+# try to infer the correct DOCKER
+ifndef DOCKER
+DOCKER	:=$(shell if which docker > /dev/null; \
+  then echo 'docker'; exit; \
+  else \
+  printf "***\n" 1>&2; \
+  printf "***Error: Couldn't find a docker executable.\n" 1>&2; \
+  printf "***\n" 1>&2; exit 1; fi)
+endif
+
+
+V       := @
+
+LOGIN   := login
+BUILD   := build
+PUSH    := push
+PULL    := pull
+TAG     := tag
+RUN		:= run
+RMI		:= rmi
+RM		:= rm 
+
 DOCKER_REGISTRY	=docker.io
-DOCKER_ORG	=$(shell docker info 2>/dev/null | sed '/Username:/!d;s/.* //')
-#image name or repository name 
+DOCKER_ORG		=$(shell docker info 2>/dev/null | sed '/Username:/!d;s/.* //')
+
+# the image name
 DOCKER_IMAGE	=opencv_test
+
 DOCKER_FULL_NAME=$(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_IMAGE)
 
 ifeq ("$(DOCKER_ORG)","")
-$(warning WARNING: No docker user found using results from whoami)
-DOCKER_ORG	=$(shell whoami)
+$(warning WARNING: No docker user found, please sign in docker hub use docker login.)
+endif
+#DOCKER_LOGIN	=$(DOCKER) ${LOGIN}
+# docker login -u <username> -p <password>
+#SIGN_IN			=$(DOCKER_LOGIN) -u $(USER) -p $(PASSWORD)
+
+
+ifdef CUDA
+DEFAULT_RUNTIME	=$(shell docker info 2>/dev/null | sed '/Runtime:/!d;s/.* //')
+RUNTIMES=$(shell docker info 2>/dev/null | sed -e '/Runtimes:/!d' -e '/nvidia/!d;s/.*/nvidia/')
+ifneq ("$(RUNTIMES)","nvidia")
+$(warning WARNING:Runtimes is not found nvidia, should set it!)
+endif
+ifneq ("$(DEFAULT_RUNTIME)","nvidia")
+$(warning WARNING:Default runtime is not nvidia, should set it)
+endif
+CUDA_IMAGE		=nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
 endif
 
-DOCKER_RUNTIME =$(shell docker info 2>/dev/null | sed '/Runtime:/!d;s/.* //')
-#runtimes?=nvidia
-ifeq ("$(DOCKER_RUNTIME)","nvidia")
-CUDA_VERSION    =cuda:10.0
-CUDNN_VERSION   =cudnn7
-NVIDIA_IMAGE_TYPE=devel
-SYSTEM_NAME     =ubuntu18.04
-NVIDIA		=nvidia
-else
-NVIDIA		=$(empty)
-endif
+###########################################################
+# the basic image name
+BASE_IMAGE		=ubuntu:18.04
 
-BASE_IMAGE	=ubuntu:18.04
-
-#runtime /  base / devel
-BUILD_IMAGE_TYPE =devel
+IMAGE_TYPE		=base_ubuntu18.04
 
 define build_image_name
-$(if $(1),$(1)/$(CUDA_VERSION)-$(CUDNN_VERSION)-$(NVIDIA_IMAGE_TYPE)-$(SYSTEM_NAME),$(BASE_IMAGE))
+$(if $(ifeq ("$(CUDA)","ON")),$(CUDA_IMAGE),$(BASE_IMAGE))
 endef
 
-IMAGE_NAME =$(call build_image_name,$(NVIDIA))
+IMAGE_NAME		=$(call build_image_name,$(CUDA))
 
-PYTHON_VERSION	=3.6
 
-#base or dev 
-BUILD_TYPE	=dev
-BUILD_PROGRESS	=auto
-BUILD_ARGS	=--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+PYTHON_VERSION	?=3.8
+
+define print
+	@echo "docker image: \t ${DOCKER_IMAGE}"
+	@echo "Python version: \t ${PYTHON_VERSION}"
+endef
+
+#####################################################
+# base or dev 
+BUILD_TYPE	  =base
+BUILD_PROGRESS=auto
+BUILD_ARGS	  =--build-arg BASE_IMAGE=$(IMAGE_NAME) \
 		--build-arg PYTHON_VERSION=$(PYTHON_VERSION) 
 EXTRA_DOCKER_BUILD_FLAGS?=
 
-#BUILD_CMD
-BUILD		:=docker build
-DOCKER_BUILD	=DOCKER_BUILDIT=1 \
-		 $(BUILD) --progress=$(BUILD_PROGRESS) \
+# build docker image
+BUILD_CMD	=DOCKER_BUILDIT=1 \
+		 $(DOCKER) $(BUILD) --progress=$(BUILD_PROGRESS) \
 		 $(EXTRA_DOCKER_BUILD_FLAGS) \
 		 --target $(BUILD_TYPE) \
 		 -t $(DOCKER_FULL_NAME):$(TAG_VERSION) \
 		 $(BUILD_ARGS) .
 
-#PUSH_CMD
+# push the docker image
 DOCKER_TAG	=latest
-PUSH		:=docker push
-DOCKER_PUSH	=$(PUSH) $(DOCKER_FULL_NAME):$(DOCKER_TAG)
+PUSH_CMD	=$(DOCKER) $(PUSH) $(DOCKER_FULL_NAME):$(DOCKER_TAG)
 
-#RM_CMD
-RMI		:=-docker rmi -f
-RM_IMAGE	=$(shell docker images -q $(DOCKER_ORG)/$(DOCKER_IMAGE):$(TAG_VERSION))
+# remove the docker image
+RM_IMAGE_ID	=$(shell docker images -a -q $(DOCKER_ORG)/$(DOCKER_IMAGE):$(TAG_VERSION))
+RMI_CMD_ID		=$(DOCKER) $(RMI) -f $(RM_IMAGE_ID)
+RM_IMAGE	=$(shell docker images -a -q -f dangling=true)
+RMI_CMD		=$(DOCKER) $(RMI) -f $(RM_IMAGE)
 
-DOCKER_RMI	=$(RMI) $(RM_IMAGE)
+# tag for image 
+# 1.0 +
+TAG_VERSION =$(IMAGE_TYPE)_1.1
+TAG_CMD		=$(DOCKER) $(TAG) $(DOCKER_FULL_NAME):$(TAG_VERSION) $(DOCKER_FULL_NAME):$(DOCKER_TAG)
 
-#TAG_CMD
-TAG		:=docker tag
-#1.0.0 +
-TAG_VERSION 	=$(BUILD_IMAGE_TYPE)-1.0.6
-TAGS		=$(TAG) $(DOCKER_FULL_NAME):$(TAG_VERSION) $(DOCKER_FULL_NAME):$(DOCKER_TAG)
-
-
-#RUN_CMD
-RUN		:=docker run
+# create a container use the docker image 
 RUN_IMAGE	=$(DOCKER_FULL_NAME):$(DOCKER_TAG)
+VOLUME		=/home/l/test:/test
 
 RUN_ARGS	=-it \
-		 -v /home/l/test:/test
-CONTAINER_NAME	=test_1
-DOCKER_RUN	=$(RUN) --name=$(CONTAINER_NAME) \
+		 -v $(VOLUME)
+
+CONTAINER_NAME	=test_opencv
+
+RUN_CMD		=$(DOCKER) $(RUN) --name=$(CONTAINER_NAME) \
 		 $(RUN_ARGS) \
 		 $(RUN_IMAGE)
+
 #-----------------------------------------------------------------------
+
 COPY	:= cp
 MKDIR	:= mkdir -p
-MV	:= mv
-RM	:= rm -f
-AWK	:= sed
-SH	:= sh
+MV		:= mv
+RM		:= rm -f
+AWK		:= sed
+SH		:= sh
 TOUCH	:= touch -c
-PWD	:= PWD
-
+PWD		:= pwd
 
 #-----------------------------------------------------------------------
-
 .PHONY:all
 all: build push
 
-
+.PHONY:check
+check:
+	$(call print)
+	@echo "BUILD_CMD:\n $(BUILD_CMD)"
+	@echo "TAG_CMD:\n $(TAG_CMD)"
+	@echo "PUSH_CMD:\n $(PUSH_CMD)"
+	@echo "RMI_CMD:\n -$(RMI_CMD)"
+	@echo "RM_CMD_ID:\n -$(RMI_CMD_ID)"
 .PHONY:build
-build:NVIDIA=nvidia
-build:BASE_IMAGE:=$(IMAGE_NAME)
 build:
 	@echo "-----------------strart build image -------------"
-	@echo "BUILD_CMD: \n	$(DOCKER_BUILD)"
-	@echo "TAG_CMD: \n	$(TAGS)"
-	$(DOCKER_BUILD)
-	$(TAGS)
-	@echo "-------------------------------------------------\n"
-.PHONY:push
-push:BASE_IMAGE:=$(IMAGE_NAME)
-push:
-	@echo "----------------start push ----------------------"
-	@echo "PUSH_CMD: \n$(DOCKER_PUSH)"
-	$(DOCKER_PUSH)
+	$(V)$(BUILD_CMD)
+	$(V)$(TAG_CMD)
 	@echo "-------------------------------------------------\n"
 
+.PHONY:push
+push:
+	@echo "----------------start push ----------------------"
+	$(V)$(PUSH_CMD)
+	@echo "-------------------------------------------------\n"
 
 .PHONY:run
 run:
 	@echo "------------------run ----------------------------"
-	@echo "RUN_CMD: \n $(DOCKER_RUN)"
-	$(DOCKER_RUN)
+	$(V)$(RUN_CMD)
 	@echo "--------------------------------------------------\n"
 
 .PHONY:clean
 clean:
-	@echo "RMI_CMD: \n$(DOCKER_RMI)"
-	$(DOCKER_RMI)
+	-$(RMI_CMD_ID)
+	-$(RMI_CMD)
+

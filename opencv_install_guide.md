@@ -340,14 +340,15 @@ DOCKER_IMAGE	=opencv_test
 #选择基础镜像包
 BASE_IMAGE	=ubuntu:18.04
 #修改镜像包标签版本
-TAG_VERSION 	=$(BUILD_IMAGE_TYPE)-1.0.5
+TAG_VERSION 	=$(BUILD_IMAGE_TYPE)-1.0.0
 #选择是否开启CUDA ，需要提前安装好nvidia-driver 和 NVIDIA Container Toolkit，并且设置好 默认runtime为 nvidia
-build:NVIDIA:=nvidia  #开启，默认关闭
+make build CUDA  #开启，默认关闭
 #修改运行镜像时所需的参数
+VOLUME		=/home/l/test:/test
 RUN_ARGS	=-it \
-		 -v /home/l/test:/test
+		 -v $(VOLUME)
 #运行时容器名称
-CONTAINER_NAME	=test_1
+CONTAINER_NAME	=test_opencv
 #修改完Makefile，保存推出
 
 #检查install_opencv.sh,确保可以使用/bin/sh 命令运行该脚本
