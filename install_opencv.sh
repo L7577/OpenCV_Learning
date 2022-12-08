@@ -2,11 +2,11 @@
 #
 # This bash script install opencv in ubuntu
 #  
-#------------------------------
+#########################
 # load bash library
 . libtools.sh
 
-#-------------------------------
+
 # opencv with cuda
 CUDA_SUPPORT=OFF
 
@@ -24,7 +24,8 @@ url_opencv_contrib="https://github.com/opencv/opencv_contrib/archive/${OPENCV_VE
 zip_opencv=opencv.zip
 zip_opencv_contrib=opencv_contrib.zip
 
-#-------------------------------
+#################################
+
 usage(){
  cat << EOF
 Usage: bash $0 [install] [test] [help] ...
@@ -38,7 +39,8 @@ Examples:
   sudo bash install_opencv.sh install  will be start install opencv
 EOF
 }
-#--------------------------------
+
+#################################
 
 download_files(){
      if ! check_file ${2}; then 
@@ -113,7 +115,7 @@ main(){
   esac
 }
 
-#-------------------------------------------------
+################################
 use_debug
 use_pipefail
 need_root
