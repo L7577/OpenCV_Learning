@@ -38,7 +38,9 @@ endif
 #SIGN_IN			=$(DOCKER_LOGIN) -u $(USER) -p $(PASSWORD)
 
 
-ifdef CUDA
+CUDA	?=OFF  
+# make CUDA=ON build
+ifeq ("$(CUDA)","ON")
 DEFAULT_RUNTIME	=$(shell docker info 2>/dev/null | sed '/Runtime:/!d;s/.* //')
 RUNTIMES=$(shell docker info 2>/dev/null | sed -e '/Runtimes:/!d' -e '/nvidia/!d;s/.*/nvidia/')
 ifneq ("$(RUNTIMES)","nvidia")
@@ -57,11 +59,10 @@ BASE_IMAGE		=ubuntu:18.04
 IMAGE_TYPE		=base_ubuntu18.04
 
 define build_image_name
-$(if $(ifeq ("$(CUDA)","ON")),$(CUDA_IMAGE),$(BASE_IMAGE))
+$(if ifeq ("$(1)","ON"), $(CUDA_IMAGE),$(BASE_IMAGE))
 endef
 
 IMAGE_NAME		=$(call build_image_name,$(CUDA))
-
 
 PYTHON_VERSION	?=3.8
 
@@ -75,7 +76,8 @@ endef
 BUILD_TYPE	  =base
 BUILD_PROGRESS=auto
 BUILD_ARGS	  =--build-arg BASE_IMAGE=$(IMAGE_NAME) \
-		--build-arg PYTHON_VERSION=$(PYTHON_VERSION) 
+		--build-arg PYTHON_VERSION=$(PYTHON_VERSION) \
+        --build-arg CUDA_SUPPORT=${CUDA}
 EXTRA_DOCKER_BUILD_FLAGS?=
 
 # build docker image
@@ -98,7 +100,7 @@ RMI_CMD		=$(DOCKER) $(RMI) -f $(RM_IMAGE)
 
 # tag for image 
 # 1.0 +
-TAG_VERSION =$(IMAGE_TYPE)_1.1
+TAG_VERSION =$(IMAGE_TYPE)_1.3
 TAG_CMD		=$(DOCKER) $(TAG) $(DOCKER_FULL_NAME):$(TAG_VERSION) $(DOCKER_FULL_NAME):$(DOCKER_TAG)
 
 # create a container use the docker image 
@@ -127,7 +129,7 @@ PWD		:= pwd
 
 #-----------------------------------------------------------------------
 .PHONY:all
-all: build push
+all: build 
 
 .PHONY:check
 check:

@@ -1,13 +1,10 @@
 # opencv
 
-
-
 - [二进制安装](#二进制)
+
 - [源代码构建](#源代码构建)
 
 - [Docker镜像](#docker镜像)
-
-
 
 参考：[**OpenCV installation overview**](https://docs.opencv.org/4.x/d0/d3d/tutorial_general_install.html)
 
@@ -15,7 +12,7 @@
 
 注：实验在ubuntu18.04中进行
 
-## 二进制安装 
+## 二进制安装
 
 此方式适合快速安装opencv，但需要注意，安装的包可能不是最新的。
 
@@ -36,12 +33,7 @@ python
 
 #或者执行以下命令
 python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
-
 ```
-
-
-
-
 
 ## 源代码构建
 
@@ -70,10 +62,7 @@ sudo apt-get install libtbb-dev
 
 #安装eigen库
 sudo apt install libeigen3-dev
-
 ```
-
-
 
 ### 下载源码
 
@@ -84,10 +73,7 @@ wget -q https://github.com/opencv/opencv_contrib/archive/${OPENCV_VERSION}.zip -
 
 #分别解压，进入opencv目录中，新建一个build目录并进入，用于构建opencv
 cd opencv/build
-
 ```
-
-
 
 配置项需要参考：[**OpenCV configuration options reference**](https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html)
 
@@ -100,7 +86,6 @@ cd opencv/build
 cmake ../opencv
 # 打印所有配置项
 cmake -L
-
 ```
 
 ```sh
@@ -121,8 +106,6 @@ cmake -L
 #最后安装路径
 -DCMAKE_INSTALL_PREFIX=/usr/local
 ```
-
-
 
 #### 1.命令行
 
@@ -266,10 +249,7 @@ cmake \
 -- Configuring done
 -- Generating done
 -- Build files have been written to: /install/opencv-4.5.5/build
-
 ```
-
-
 
 #### 2.图形化界面
 
@@ -277,18 +257,25 @@ cmake \
 
 ![](./pictures/opencv_cmake配置.png)
 
-
-
 按需选择配置!!!
 
-
-
 cmake构建配置项无问题后，开始编译
+
+*有两种编译工具 make 和 ninja*
+
+- make
 
 ```sh
 make -j$(nproc)
 # 安装
 make install
+```
+
+- ninja 
+```  
+# cmake -G Ninja ${cmake_options}
+
+ninja && ninja install
 ```
 
 
@@ -299,8 +286,6 @@ make install
 python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
 ```
 
-
-
 ### bash脚本
 
 本仓库提供了`install_opencv.sh`用于源代码构建安装opencv，但是脚本不提供安装依赖包及一些工具包，需要自己手动下载并安装好依赖包如：python、cmake、make等。
@@ -310,21 +295,14 @@ python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
 sudo bash install_opencv.sh install 
 
 #注意install_opencv.sh中，有配置项需要手动修改
-#使用/bin/sh  时或在需要Dockerfile中运行，请注释 set -o pipefail 
-
+#使用/bin/sh时或在需要Dockerfile中运行，请注释 set -o pipefail 
 ```
-
-
-
-
 
 ## Docker镜像
 
 选择所需的版本，可选支持CUDA或者不支持CUDA
 
 *注意：两个版本镜像大小差距很大*
-
-
 
 可使用make工具以及shell脚本创建所需镜像！本仓库已提供了可自动构建镜像所使用的Makefile、Dockerfile、以及源码安装的bash脚本（仅在ubuntu18.04测试）。
 
@@ -336,22 +314,19 @@ cd OpenCV_learning
 vim Makefile
 
 #构建的镜像名称或者仓库名称
-DOCKER_IMAGE	=opencv_test
+DOCKER_IMAGE    =opencv_test
 #选择基础镜像包
-BASE_IMAGE	=ubuntu:18.04
-#修改镜像包标签版本
-TAG_VERSION 	=$(BUILD_IMAGE_TYPE)-1.0.0
-#选择是否开启CUDA ，需要提前安装好nvidia-driver 和 NVIDIA Container Toolkit，并且设置好 默认runtime为 nvidia
-make build CUDA  #开启，默认关闭
-#修改运行镜像时所需的参数
-VOLUME		=/home/l/test:/test
-RUN_ARGS	=-it \
-		 -v $(VOLUME)
-#运行时容器名称
-CONTAINER_NAME	=test_opencv
-#修改完Makefile，保存推出
+BASE_IMAGE    =ubuntu:18.04
 
-#检查install_opencv.sh,确保可以使用/bin/sh 命令运行该脚本
+#选择是否开启CUDA ，需要提前安装好nvidia-driver 和 NVIDIA Container Toolkit，并且设置好 默认runtime为 nvidia
+make build CUDA=ON  #开启，默认关闭
+#修改运行镜像时所需的参数
+VOLUME        =/home/l/test:/test
+RUN_ARGS    =-it \
+         -v $(VOLUME)
+#运行时容器名称
+CONTAINER_NAME    =test_opencv
+#修改完Makefile，保存退出
 
 #开始构建镜像
 make  build
@@ -360,4 +335,3 @@ make push
 #运行容器
 make run 
 ```
-

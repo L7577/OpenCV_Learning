@@ -2,10 +2,11 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE} as base
 WORKDIR /workdir
 ARG DEBIAN_FRONTEND=noninteractive
+ARG CUDA_SUPPORT
 COPY ./install/ninja /workdir/
 RUN apt-get -qq update --fix-missing \ 
   && buildtools='build-essential g++ gcc cmake pkg-config \
-libeigen3-dev  python3-dev python3-numpy wget' \
+libeigen3-dev libgtk2.0-dev python3-dev python3-numpy wget' \
   && apt-get -qq install -y \
 	 --no-install-recommends ${buildtools} \
 && WORK_DIR="/workdir/" \
