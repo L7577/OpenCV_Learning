@@ -49,20 +49,16 @@ endif
 ifneq ("$(DEFAULT_RUNTIME)","nvidia")
 $(warning WARNING:Default runtime is not nvidia, should set it)
 endif
-CUDA_IMAGE		=nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+#IMAGE_NAME		=nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+IMAGE_NAME		=nvcr.io/nvidia/pytorch:22.06-py3
+IMAGE_TYPE		+=gpu
 endif
 
 ###########################################################
 # the basic image name
-BASE_IMAGE		=ubuntu:18.04
+IMAGE_NAME		?=ubuntu:18.04
 
-IMAGE_TYPE		=base_ubuntu18.04
-
-define build_image_name
-$(if ifeq ("$(1)","ON"), $(CUDA_IMAGE),$(BASE_IMAGE))
-endef
-
-IMAGE_NAME		=$(call build_image_name,$(CUDA))
+IMAGE_TYPE		?=cpu
 
 PYTHON_VERSION	?=3.8
 
@@ -100,19 +96,23 @@ RMI_CMD		=$(DOCKER) $(RMI) -f $(RM_IMAGE)
 
 # tag for image 
 # 1.0 +
-TAG_VERSION =$(IMAGE_TYPE)_1.3
+TAG_VERSION =$(IMAGE_TYPE)_1.5
 TAG_CMD		=$(DOCKER) $(TAG) $(DOCKER_FULL_NAME):$(TAG_VERSION) $(DOCKER_FULL_NAME):$(DOCKER_TAG)
 
 # create a container use the docker image 
 RUN_IMAGE	=$(DOCKER_FULL_NAME):$(DOCKER_TAG)
-VOLUME		=/home/l/test:/test
+VOLUME		=/home/l/test/:/test \
+			-v /tmp/.X11-unix:/tmp/.X11-unix
+ENV			=DISPLAY=$(DISPLAY)
 
 RUN_ARGS	=-it \
-		 -v $(VOLUME)
+		 --name=$(CONTAINER_NAME) \
+		 -v $(VOLUME) \
+         -e $(ENV)
 
 CONTAINER_NAME	=test_opencv
 
-RUN_CMD		=$(DOCKER) $(RUN) --name=$(CONTAINER_NAME) \
+RUN_CMD		=$(DOCKER) $(RUN) \
 		 $(RUN_ARGS) \
 		 $(RUN_IMAGE)
 
@@ -136,6 +136,7 @@ check:
 	$(call print)
 	@echo "BUILD_CMD:\n $(BUILD_CMD)"
 	@echo "TAG_CMD:\n $(TAG_CMD)"
+	@echo "RUN_CMD:\n $(RUN_CMD)"
 	@echo "PUSH_CMD:\n $(PUSH_CMD)"
 	@echo "RMI_CMD:\n -$(RMI_CMD)"
 	@echo "RM_CMD_ID:\n -$(RMI_CMD_ID)"

@@ -42,6 +42,5 @@ libeigen3-dev libgtk2.0-dev python3-dev python3-numpy wget' \
  && cmake -G Ninja ${cmake_options}\
  && ./ninja && ./ninja install \
  && rm -rf /var/lib/apt/lists/* \
- && apt-get purge -y --autoremove wget \
  && rm -rf /workdir/* \
  && python3 -c "import cv2 ; print('opencv version:'+cv2.__version__)"
