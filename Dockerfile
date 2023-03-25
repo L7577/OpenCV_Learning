@@ -3,16 +3,16 @@ FROM ${BASE_IMAGE} as base
 WORKDIR /workdir
 ARG DEBIAN_FRONTEND=noninteractive
 ARG CUDA_SUPPORT
-COPY ./install/ninja /workdir/
+ARG OPENCV_VERSION
+COPY ./tool/ninja /workdir/
 RUN apt-get -qq update --fix-missing \ 
   && buildtools='build-essential g++ gcc cmake pkg-config \
 libeigen3-dev libgtk2.0-dev python3-dev python3-numpy wget' \
   && apt-get -qq install -y \
 	 --no-install-recommends ${buildtools} \
 && WORK_DIR="/workdir/" \
-&& BUILD_DIR="${WORK_DIR}opencv-4.5.5/build/" \
+&& BUILD_DIR="${WORK_DIR}opencv-${OPENCV_VERSION}/build/" \
 && INSTALL_DIR="/usr/local" \
-&& OPENCV_VERSION=4.5.5 \
 && opencv_url="https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.tar.gz" \
 && opencv_contrib_url="https://github.com/opencv/opencv_contrib/archive/refs/tags/${OPENCV_VERSION}.tar.gz" \
 && wget -qq ${opencv_url} -O opencv.tar.gz --no-check-certificate  \
@@ -39,7 +39,7 @@ libeigen3-dev libgtk2.0-dev python3-dev python3-numpy wget' \
 -D OPENCV_ENABLE_NONFREE=ON \
 -D PYTHON3_PACKAGES_PATH=/usr/lib/python3/dist-packages .. " \
  && cd ${BUILD_DIR} \
- && cmake -G Ninja ${cmake_options}\
+ && cmake -G Ninja ${cmake_options} \
  && ./ninja && ./ninja install \
  && rm -rf /var/lib/apt/lists/* \
  && rm -rf /workdir/* \

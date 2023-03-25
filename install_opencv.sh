@@ -6,11 +6,13 @@
 # load bash library
 . libtools.sh
 
+# use ninja
+NINJA=OFF
 
 # opencv with cuda
 CUDA_SUPPORT=OFF
 
-NEEDED_TOOLS=(wget unzip cmake make)
+NEEDED_TOOLS=(wget unzip cmake make ninja)
 MISSING_TOOLS=()
 
 WORK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -74,18 +76,17 @@ EOF
 )
 
 install_opencv(){
-     cmake ${cmake_options} \
-     && printf "cmake ${cmake_options}\n" \
-     && make -j$(nproc) && make install 
-     #cp -f ${BUILD_DIR}/unix-install/opencv4.pc /usr/lib/pkgconfig/opencv.pc
-#     local opencv_lib_path="${INSTALL_DIR}/lib/pkgconfig"
-#     echo "export PKG_CONFIG_PATH=${opencv_lib_path}:\${PKG_CONFIG_PATH}" >> ~/.bashrc
-#     source ~/.bashrc
-#     ldconfig
+  if [[ "${NINJA}" == "ON" ]];then
+    cmake -G Ninja ${cmake_options} \
+    && ./ninja && ./ninja install 
+  else
+    cmake ${cmake_options} \
+    && printf "cmake ${cmake_options}\n" \
+    && make -j$(nproc) && make install 
+  fi
 }
  
 test_python_opencv(){
-    remove_files opencv-4.5.5 opencv_contrib-4.5.5
     python3 -c "import cv2 ; print('python-opencv version :' + cv2.__version__)"
 }	
 
@@ -93,15 +94,13 @@ test_python_opencv(){
 install_test(){
 
 local BUILD_DIR=${WORK_DIR}/opencv-${OPENCV_VERSION}/build
-    download_files ${url_opencv} ${zip_opencv} ${WORK_DIR} 
-    mkdir -p ${BUILD_DIR} 
-    download_files ${url_opencv_contrib} ${zip_opencv_contrib} ${WORK_DIR} 
-    cd ${BUILD_DIR}
-    
-    install_opencv
+    download_files ${url_opencv} ${zip_opencv} ${WORK_DIR} \
+    && mkdir -p ${BUILD_DIR} \
+    && download_files ${url_opencv_contrib} ${zip_opencv_contrib} ${WORK_DIR} \
+    && cd ${BUILD_DIR} \
+    && install_opencv
 
-    cd ${WORK_DIR}
-    remove_files opencv-4.5.5 opencv_contrib-4.5.5
+    #cd ${WORK_DIR}  &&  remove_files opencv-${OPENCV_VERSION} opencv_contrib-${OPENCV_VERSION}
 }
 
 main(){

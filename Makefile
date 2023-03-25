@@ -62,9 +62,12 @@ IMAGE_TYPE		?=cpu
 
 PYTHON_VERSION	?=3.8
 
+OPENCV_VERSION	?=4.6.0
+
 define print
 	@echo "docker image: \t ${DOCKER_IMAGE}"
 	@echo "Python version: \t ${PYTHON_VERSION}"
+	@echo "opencv version: \t $(OPENCV_VERSION)"
 endef
 
 #####################################################
@@ -72,8 +75,8 @@ endef
 BUILD_TYPE	  =base
 BUILD_PROGRESS=auto
 BUILD_ARGS	  =--build-arg BASE_IMAGE=$(IMAGE_NAME) \
-		--build-arg PYTHON_VERSION=$(PYTHON_VERSION) \
-        --build-arg CUDA_SUPPORT=${CUDA}
+        --build-arg CUDA_SUPPORT=${CUDA} \
+		--build-arg OPENCV_VERSION=$(OPENCV_VERSION)
 EXTRA_DOCKER_BUILD_FLAGS?=
 
 # build docker image
@@ -96,7 +99,7 @@ RMI_CMD		=$(DOCKER) $(RMI) -f $(RM_IMAGE)
 
 # tag for image 
 # 1.0 +
-TAG_VERSION =$(IMAGE_TYPE)_1.5
+TAG_VERSION =$(IMAGE_TYPE)_1.6
 TAG_CMD		=$(DOCKER) $(TAG) $(DOCKER_FULL_NAME):$(TAG_VERSION) $(DOCKER_FULL_NAME):$(DOCKER_TAG)
 
 # create a container use the docker image 
