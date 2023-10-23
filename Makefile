@@ -132,7 +132,7 @@ PWD		:= pwd
 
 #-----------------------------------------------------------------------
 .PHONY:all
-all: build 
+all: check 
 
 .PHONY:check
 check:
